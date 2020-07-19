@@ -1,0 +1,21 @@
+.chat {
+  border: 1px black solid;
+  height: 80vh;
+  overflow: auto;
+}
+
+.chat .message {
+  border: 1px black solid;
+  margin: 5px;
+}
+
+.send {
+  display: flex;
+  margin-top: 5px;
+  width: 100%;
+}
+
+.send input {
+  margin-right: 5px;
+  width: 100%;
+}

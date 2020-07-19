@@ -1,0 +1,114 @@
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <link rel="stylesheet" type="text/css" href="/app/index.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div>
+        <span v-if="isConnected"> CONNECTED </span>
+        <span v-else>WAITING FOR CONNECT</span>
+      </div>
+      <div class="chat" ref="chat">
+        <div v-for="message in messages" :key="message._id" class="message">
+          <div>
+            {{ message.message }}
+          </div>
+          <div>
+            {{ new Date(message.created).toLocaleString() }}
+          </div>
+        </div>
+      </div>
+      <div class="send">
+        <input v-model="txtMessage" />
+        <button @click="sendHandle">Send</button>
+      </div>
+    </div>
+
+    <script>
+      const app = new Vue({
+        el: "#app",
+        data: {
+          txtMessage: "",
+          messages: [],
+          socket: null,
+          isConnected: false
+        },
+
+        created() {
+          this.loadMessages();
+          this.connect();
+        },
+
+        methods: {
+          scrollDown() {
+            setTimeout(() => {
+              const { chat } = this.$refs;
+
+              chat.scrollTop = chat.scrollHeight;
+            }, 0);
+          },
+
+          getSocketUrl() {
+            const { host } = window.location;
+
+            return `wss://${host}`;
+          },
+
+          connedtedHanle() {
+            this.isConnected = true;
+          },
+
+          closeHandle() {
+            this.isConnected = false;
+
+            this.socket.removeEventListener("open", this.connedtedHanle);
+            this.socket.removeEventListener("message", this.messageHandle);
+            this.socket.removeEventListener("close", this.closeHandle);
+
+            this.connect();
+          },
+
+          messageHandle(message) {
+            try {
+              const data = JSON.parse(message.data);
+
+              this.messages = [...this.messages, data];
+              this.scrollDown();
+            } catch (e) {
+              console.error("failed to parse message");
+              console.error(message);
+            }
+          },
+
+          sendHandle() {
+            this.send({ message: this.txtMessage });
+            this.txtMessage = "";
+          },
+
+          connect() {
+            this.socket = new WebSocket(this.getSocketUrl());
+
+            this.socket.addEventListener("open", this.connedtedHanle);
+            this.socket.addEventListener("message", this.messageHandle);
+            this.socket.addEventListener("close", this.closeHandle);
+          },
+
+          loadMessages() {
+            fetch("/messages")
+              .then(res => res.json())
+              .then(res => {
+                this.messages = res;
+                this.scrollDown();
+              })
+              .catch(console.error);
+          },
+
+          send(data) {
+            this.socket.send(JSON.stringify(data));
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
